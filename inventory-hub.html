@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Inventory Hub — SAP Inventory Management</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:#131720}
+::-webkit-scrollbar-thumb{background:#2E364A;border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:#565E73}
+body{font-family:'Outfit',sans-serif;background:#0B0E11;color:#E8EAF0;font-size:14px;overflow:hidden;height:100vh}
+@keyframes slideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes barGrow{from{width:0}}
+.animate-in{animation:slideIn .4s ease both}
+.d1{animation-delay:.05s}.d2{animation-delay:.1s}.d3{animation-delay:.15s}.d4{animation-delay:.2s}
+.syncing{animation:spin 1s linear infinite}
+.bar-grow{animation:barGrow .8s ease both}
+#app{display:flex;height:100vh}
+.sidebar{width:240px;background:#131720;border-right:1px solid #252B3B;display:flex;flex-direction:column;flex-shrink:0;overflow:auto}
+.logo{padding:20px 20px 16px;border-bottom:1px solid #252B3B}
+.logo-title{font-size:18px;font-weight:700;letter-spacing:-0.02em;display:flex;align-items:center;gap:10px}
+.logo-icon{width:28px;height:28px;border-radius:6px;background:linear-gradient(135deg,#0070F2,#3B82F6);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
+.logo-sub{font-size:11px;color:#565E73;margin-top:4px;font-family:'JetBrains Mono',monospace;letter-spacing:0.05em}
+nav{padding:12px 8px;flex:1}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:400;color:#8B92A5;border:1px solid transparent;transition:all .15s;margin-bottom:2px;position:relative}
+.nav-item:hover{background:rgba(59,130,246,0.06);color:#E8EAF0}
+.nav-item.active{font-weight:600;color:#E8EAF0;background:rgba(59,130,246,0.15);border-color:rgba(59,130,246,0.2)}
+.nav-badge{margin-left:auto;background:#EF4444;color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px}
+.sidebar-footer{padding:12px 16px;border-top:1px solid #252B3B;font-size:11px}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+header{padding:16px 28px;border-bottom:1px solid #252B3B;display:flex;align-items:center;justify-content:space-between;background:#131720;position:sticky;top:0;z-index:10}
+header h1{font-size:20px;font-weight:600;letter-spacing:-0.01em}
+.content{padding:24px;flex:1;overflow:auto}
+.card{background:#131720;border:1px solid #252B3B;border-radius:12px;overflow:hidden}
+.card-header{padding:14px 18px;border-bottom:1px solid #252B3B;display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:600}
+.stat-card{background:#131720;border:1px solid #252B3B;border-radius:12px;padding:18px 20px;position:relative;overflow:hidden}
+.stat-card .bar{position:absolute;top:0;left:0;right:0;height:2px}
+.stat-label{font-size:11px;color:#8B92A5;font-weight:500;margin-bottom:8px}
+.stat-value{font-size:26px;font-weight:700;font-family:'JetBrains Mono',monospace}
+.stat-sub{font-size:11px;color:#565E73;margin-top:4px}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:0.02em}
+.badge .dot{width:5px;height:5px;border-radius:50%}
+.badge-optimal{background:rgba(16,185,129,0.12);color:#10B981}
+.badge-optimal .dot{background:#10B981}
+.badge-low{background:rgba(245,158,11,0.12);color:#F59E0B}
+.badge-low .dot{background:#F59E0B}
+.badge-critical{background:rgba(239,68,68,0.12);color:#EF4444}
+.badge-critical .dot{background:#EF4444}
+.badge-overstock{background:rgba(139,92,246,0.12);color:#8B5CF6}
+.badge-overstock .dot{background:#8B5CF6}
+.badge-accent{background:rgba(59,130,246,0.15);color:#3B82F6}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap;font-family:inherit;border:1px solid #2E364A;background:#1A1F2E;color:#E8EAF0}
+.btn:hover{background:#252B3B}
+.btn-primary{background:#3B82F6;border-color:#3B82F6;color:#fff}
+.btn-primary:hover{background:#2563EB}
+.btn-sap{background:rgba(0,112,242,0.1);border-color:rgba(0,112,242,0.3);color:#0070F2}
+.btn-sap:hover{background:rgba(0,112,242,0.2)}
+input[type="text"],input[type="password"],.search-input{background:#1A1F2E;border:1px solid #252B3B;border-radius:8px;padding:8px 12px;color:#E8EAF0;font-size:13px;outline:none;font-family:inherit;width:100%}
+input:focus{border-color:#3B82F6}
+select{background:#1A1F2E;border:1px solid #252B3B;border-radius:8px;padding:8px 12px;color:#E8EAF0;font-size:12px;outline:none;font-family:inherit;cursor:pointer;appearance:none;padding-right:28px;background-image:url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23565E73' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+select:focus{border-color:#3B82F6}
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}
+th{padding:10px 14px;text-align:left;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:#565E73;border-bottom:1px solid #252B3B;cursor:pointer;user-select:none;white-space:nowrap}
+td{padding:12px 14px;border-bottom:1px solid #252B3B;vertical-align:middle}
+tr.hoverable:hover{background:#1A1F2E}
+.mono{font-family:'JetBrains Mono',monospace;font-size:12px}
+.text-muted{color:#8B92A5}.text-dim{color:#565E73}
+.text-accent{color:#3B82F6}.text-success{color:#10B981}.text-warning{color:#F59E0B}.text-danger{color:#EF4444}.text-overstock{color:#8B5CF6}
+.grid-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px}
+.flex{display:flex}.flex-col{flex-direction:column}.items-center{align-items:center}.justify-between{justify-content:space-between}
+.gap-8{gap:8px}.gap-10{gap:10px}.gap-14{gap:14px}.gap-16{gap:16px}.gap-20{gap:20px}
+.fw-500{font-weight:500}.fw-600{font-weight:600}.fw-700{font-weight:700}
+.stock-bar{position:relative;height:6px;background:#1A1F2E;border-radius:3px;width:100%;min-width:80px}
+.stock-bar-fill{height:100%;border-radius:3px;transition:width .3s}
+.stock-bar-marker{position:absolute;top:-2px;width:1px;height:10px;opacity:.5}
+.search-wrap{position:relative;flex:1 1 250px}
+.search-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#565E73}
+.search-wrap input{padding-left:34px}
+.detail-section-label{font-size:11px;color:#565E73;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.06em}
+.detail-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #252B3B}
+.detail-row .label{color:#8B92A5;font-size:12px}
+.detail-row .value{font-family:'JetBrains Mono',monospace;font-size:12px}
+.abc-card{flex:1;padding:16px;border-radius:8px}
+.abc-A{background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2)}
+.abc-B{background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.2)}
+.abc-C{background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2)}
+.abc-title{font-size:24px;font-weight:700;font-family:'JetBrains Mono',monospace}
+.forecast-row{display:flex;align-items:center;gap:14px;padding:10px 0;border-bottom:1px solid #252B3B}
+.forecast-bar-wrap{position:relative;height:8px;background:#1A1F2E;border-radius:4px}
+.forecast-bar-fill{height:100%;border-radius:4px}
+.config-field label{font-size:11px;color:#565E73;text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:6px}
+.sync-card{padding:14px;background:#1A1F2E;border-radius:8px;border:1px solid #252B3B}
+.endpoint-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #252B3B}
+.list-row{padding:12px 18px;border-bottom:1px solid #252B3B;display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:background .15s}
+.list-row:hover{background:#1A1F2E}
+.tab-hidden{display:none!important}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-title"><span class="logo-icon">IM</span> Inventory Hub</div>
+      <div class="logo-sub">SAP-INTEGRATED MANAGEMENT</div>
+    </div>
+    <nav id="nav"></nav>
+    <div class="sidebar-footer">
+      <div class="text-dim">Last SAP Sync</div>
+      <div class="mono text-muted" id="sidebar-sync">Never</div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <header>
+      <h1 id="page-title">Dashboard</h1>
+      <div class="flex items-center gap-10">
+        <span id="sync-label" class="mono text-accent" style="font-size:11px;display:none">Syncing with SAP...</span>
+        <button class="btn btn-sap" id="sync-btn" onclick="syncFromSAP()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="23,4 23,10 17,10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+          <span id="sync-btn-text">Sync from SAP</span>
+        </button>
+      </div>
+    </header>
+    <div class="content" id="content"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════
+// DATA LAYER — Simulated SAP OData
+// ═══════════════════════════════════════════════════════════════════════
+const SAP_CONFIG = {
+  services: {
+    materialMaster: "API_MATERIAL_STOCK_SRV",
+    purchaseOrder: "API_PURCHASEORDER_PROCESS_SRV",
+    productionOrder: "API_PRODUCTION_ORDERS_SRV",
+    inventoryMovement: "API_MATERIAL_DOCUMENT_SRV",
+  }
+};
+
+const MATERIALS_MASTER = [
+  {id:"MAT-10001",name:"Steel Beam H-200",category:"Raw Materials",plant:"Plant 1000",sloc:"WH01",uom:"EA",unitCost:245,safetyStock:50,reorderPoint:75,maxStock:500,leadTimeDays:14,supplier:"SteelCorp Industries",sapMaterialGroup:"ROH",mrpType:"PD"},
+  {id:"MAT-10002",name:"Hydraulic Pump Assembly",category:"Components",plant:"Plant 1000",sloc:"WH02",uom:"EA",unitCost:1280,safetyStock:20,reorderPoint:30,maxStock:200,leadTimeDays:21,supplier:"HydraFlow Systems",sapMaterialGroup:"HALB",mrpType:"PD"},
+  {id:"MAT-10003",name:"Copper Wire 12AWG (500ft)",category:"Raw Materials",plant:"Plant 2000",sloc:"WH01",uom:"RL",unitCost:89.5,safetyStock:100,reorderPoint:150,maxStock:1000,leadTimeDays:7,supplier:"Pacific Wire Co.",sapMaterialGroup:"ROH",mrpType:"VB"},
+  {id:"MAT-10004",name:"Control Board PCB-X7",category:"Components",plant:"Plant 1000",sloc:"WH03",uom:"EA",unitCost:342,safetyStock:30,reorderPoint:45,maxStock:300,leadTimeDays:28,supplier:"TechBoard Manufacturing",sapMaterialGroup:"HALB",mrpType:"PD"},
+  {id:"MAT-10005",name:"Lubricant ISO VG 68 (20L)",category:"Consumables",plant:"Plant 2000",sloc:"WH01",uom:"DR",unitCost:67.25,safetyStock:40,reorderPoint:60,maxStock:400,leadTimeDays:5,supplier:"ChemPure Solutions",sapMaterialGroup:"HIBE",mrpType:"VB"},
+  {id:"MAT-10006",name:"Aluminum Sheet 4x8 (3mm)",category:"Raw Materials",plant:"Plant 1000",sloc:"WH01",uom:"SH",unitCost:178,safetyStock:60,reorderPoint:90,maxStock:600,leadTimeDays:10,supplier:"AlumTech Corp",sapMaterialGroup:"ROH",mrpType:"PD"},
+  {id:"MAT-10007",name:"Servo Motor SM-400",category:"Components",plant:"Plant 2000",sloc:"WH02",uom:"EA",unitCost:895,safetyStock:15,reorderPoint:25,maxStock:150,leadTimeDays:35,supplier:"MotionPro Ltd",sapMaterialGroup:"HALB",mrpType:"PD"},
+  {id:"MAT-10008",name:"Gasket Set GK-120",category:"Spare Parts",plant:"Plant 1000",sloc:"WH04",uom:"ST",unitCost:45,safetyStock:80,reorderPoint:120,maxStock:800,leadTimeDays:3,supplier:"SealMaster Inc",sapMaterialGroup:"ERSA",mrpType:"VB"},
+  {id:"MAT-10009",name:"Industrial Adhesive EP-500",category:"Consumables",plant:"Plant 1000",sloc:"WH01",uom:"TU",unitCost:32.75,safetyStock:200,reorderPoint:300,maxStock:2000,leadTimeDays:4,supplier:"BondChem Ltd",sapMaterialGroup:"HIBE",mrpType:"VB"},
+  {id:"MAT-10010",name:"Bearing SKF 6205-2RS",category:"Spare Parts",plant:"Plant 2000",sloc:"WH04",uom:"EA",unitCost:28.5,safetyStock:100,reorderPoint:150,maxStock:1200,leadTimeDays:6,supplier:"BearingWorld",sapMaterialGroup:"ERSA",mrpType:"VB"},
+  {id:"MAT-10011",name:"Stainless Steel Rod 25mm",category:"Raw Materials",plant:"Plant 1000",sloc:"WH01",uom:"EA",unitCost:56,safetyStock:70,reorderPoint:100,maxStock:700,leadTimeDays:12,supplier:"SteelCorp Industries",sapMaterialGroup:"ROH",mrpType:"PD"},
+  {id:"MAT-10012",name:"PLC Module Siemens S7",category:"Components",plant:"Plant 2000",sloc:"WH03",uom:"EA",unitCost:2150,safetyStock:5,reorderPoint:8,maxStock:50,leadTimeDays:42,supplier:"AutomationParts GmbH",sapMaterialGroup:"HALB",mrpType:"PD"},
+];
+
+let materials = [];
+let movements = [];
+let purchaseOrders = [];
+let lastSync = null;
+let activeTab = "dashboard";
+let searchTerm = "";
+let filterCategory = "All";
+let filterStatus = "All";
+let filterPlant = "All";
+let sortField = "status";
+let sortDir = "asc";
+let selectedMaterial = null;
+let planningView = "reorder";
+
+function generateSAPData() {
+  return MATERIALS_MASTER.map(m => {
+    const currentStock = Math.floor(Math.random()*(m.maxStock*0.8))+Math.floor(m.safetyStock*0.3);
+    const qualityHold = Math.floor(Math.random()*5);
+    const inTransit = currentStock < m.reorderPoint ? Math.floor(Math.random()*40)+10 : 0;
+    const reserved = Math.floor(Math.random()*(currentStock*0.3));
+    const available = Math.max(0,currentStock-qualityHold-reserved);
+    const avgDailyUsage = Math.floor(Math.random()*8)+2;
+    const daysOfSupply = Math.floor(available/avgDailyUsage);
+    let status="optimal";
+    if(currentStock<=m.safetyStock) status="critical";
+    else if(currentStock<=m.reorderPoint) status="low";
+    else if(currentStock>m.maxStock*0.9) status="overstock";
+    return {...m,currentStock,qualityHold,inTransit,reserved,available,avgDailyUsage,daysOfSupply,status,totalValue:currentStock*m.unitCost,turnoverRate:(avgDailyUsage*365/((currentStock+m.maxStock)/2)).toFixed(1)};
+  });
+}
+
+function generateMovements() {
+  const types = ["GR","GI","TR","ST"];
+  const labels = {GR:"Goods Receipt",GI:"Goods Issue",TR:"Transfer",ST:"Stock Adjustment"};
+  const mvtCodes = {GR:"101",GI:"261",TR:"311",ST:"562"};
+  const users = ["JSMITH","MJONES","KLEE","RWILSON"];
+  const mvs = [];
+  for(let i=0;i<25;i++){
+    const t=types[Math.floor(Math.random()*4)];
+    mvs.push({id:`4900${100000+i}`,type:t,typeLabel:labels[t],material:`MAT-1000${Math.floor(Math.random()*12)+1}`,quantity:Math.floor(Math.random()*100)+1,date:new Date(Date.now()-Math.random()*14*864e5),movementType:mvtCodes[t],user:users[Math.floor(Math.random()*4)]});
+  }
+  return mvs.sort((a,b)=>b.date-a.date);
+}
+
+function generatePurchaseOrders() {
+  const statuses=["Open","Partially Delivered","In Transit","Confirmed"];
+  const suppliers=["SteelCorp","HydraFlow","Pacific Wire","TechBoard","ChemPure"];
+  const pos=[];
+  for(let i=0;i<8;i++){
+    pos.push({poNumber:`450000${1200+i}`,material:`MAT-1000${Math.floor(Math.random()*12)+1}`,quantity:Math.floor(Math.random()*200)+20,deliveryDate:new Date(Date.now()+Math.random()*30*864e5),status:statuses[Math.floor(Math.random()*4)],supplier:suppliers[Math.floor(Math.random()*5)]});
+  }
+  return pos.sort((a,b)=>a.deliveryDate-b.deliveryDate);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════════════════
+const fmt$ = v => new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",minimumFractionDigits:0,maximumFractionDigits:0}).format(v);
+const fmtDate = d => new Date(d).toLocaleDateString("en-US",{month:"short",day:"numeric"});
+const fmtDT = d => new Date(d).toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"});
+const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+
+function statusBadge(status) {
+  const map = {optimal:"Optimal",low:"Low Stock",critical:"Critical",overstock:"Overstock"};
+  return `<span class="badge badge-${status}"><span class="dot"></span>${map[status]}</span>`;
+}
+
+function stockBar(current, safety, reorder, max) {
+  const pct = Math.min(100,(current/max)*100);
+  const sPct = (safety/max)*100;
+  const rPct = (reorder/max)*100;
+  let color = "#10B981";
+  if(current<=safety) color="#EF4444";
+  else if(current<=reorder) color="#F59E0B";
+  else if(current>max*0.9) color="#8B5CF6";
+  return `<div class="stock-bar"><div class="stock-bar-fill bar-grow" style="width:${pct}%;background:${color}"></div><div class="stock-bar-marker" style="left:${sPct}%;background:#EF4444" title="Safety: ${safety}"></div><div class="stock-bar-marker" style="left:${rPct}%;background:#F59E0B" title="Reorder: ${reorder}"></div></div>`;
+}
+
+function mvtColor(type) {
+  return {GR:"#10B981",GI:"#EF4444",TR:"#3B82F6",ST:"#8B5CF6"}[type]||"#8B92A5";
+}
+
+function getFiltered() {
+  let result = [...materials];
+  if(searchTerm) { const s=searchTerm.toLowerCase(); result=result.filter(m=>m.name.toLowerCase().includes(s)||m.id.toLowerCase().includes(s)||m.supplier.toLowerCase().includes(s)); }
+  if(filterCategory!=="All") result=result.filter(m=>m.category===filterCategory);
+  if(filterStatus!=="All") result=result.filter(m=>m.status===filterStatus);
+  if(filterPlant!=="All") result=result.filter(m=>m.plant===filterPlant);
+  const so={critical:0,low:1,optimal:2,overstock:3};
+  result.sort((a,b)=>{
+    let c=0;
+    if(sortField==="status") c=(so[a.status]??99)-(so[b.status]??99);
+    else if(sortField==="name") c=a.name.localeCompare(b.name);
+    else if(sortField==="stock") c=a.currentStock-b.currentStock;
+    else if(sortField==="value") c=a.totalValue-b.totalValue;
+    else if(sortField==="daysOfSupply") c=a.daysOfSupply-b.daysOfSupply;
+    return sortDir==="asc"?c:-c;
+  });
+  return result;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════════════════
+const TABS = [
+  {key:"dashboard",label:"Dashboard",icon:`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>`},
+  {key:"inventory",label:"Inventory",icon:`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 8V21H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>`},
+  {key:"planning",label:"Planning",icon:`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>`},
+  {key:"movements",label:"Movements",icon:`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h14M12 5l7 7-7 7"/></svg>`},
+  {key:"sap",label:"SAP Config",icon:`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>`},
+];
+
+function renderNav() {
+  const needsReorder = materials.filter(m=>m.currentStock<=m.reorderPoint).length;
+  document.getElementById("nav").innerHTML = TABS.map(t =>
+    `<div class="nav-item ${activeTab===t.key?"active":""}" onclick="switchTab('${t.key}')">${t.icon} ${t.label}${t.key==="planning"&&needsReorder?`<span class="nav-badge">${needsReorder}</span>`:""}</div>`
+  ).join("");
+}
+
+function switchTab(key) {
+  activeTab = key;
+  selectedMaterial = null;
+  document.getElementById("page-title").textContent = TABS.find(t=>t.key===key).label;
+  renderNav();
+  renderContent();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// SYNC
+// ═══════════════════════════════════════════════════════════════════════
+function syncFromSAP() {
+  document.getElementById("sync-label").style.display = "inline";
+  document.getElementById("sync-btn-text").textContent = "Syncing...";
+  setTimeout(() => {
+    materials = generateSAPData();
+    movements = generateMovements();
+    purchaseOrders = generatePurchaseOrders();
+    lastSync = new Date();
+    document.getElementById("sync-label").style.display = "none";
+    document.getElementById("sync-btn-text").textContent = "Sync from SAP";
+    document.getElementById("sidebar-sync").textContent = fmtDT(lastSync);
+    renderNav();
+    renderContent();
+  }, 1200);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// RENDER TABS
+// ═══════════════════════════════════════════════════════════════════════
+function renderContent() {
+  const el = document.getElementById("content");
+  if(activeTab==="dashboard") el.innerHTML = renderDashboard();
+  else if(activeTab==="inventory") el.innerHTML = renderInventory();
+  else if(activeTab==="planning") el.innerHTML = renderPlanning();
+  else if(activeTab==="movements") el.innerHTML = renderMovements();
+  else if(activeTab==="sap") el.innerHTML = renderSAP();
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────
+function renderDashboard() {
+  const totalValue = materials.reduce((s,m)=>s+m.totalValue,0);
+  const critical = materials.filter(m=>m.status==="critical").length;
+  const low = materials.filter(m=>m.status==="low").length;
+  const needsReorder = materials.filter(m=>m.currentStock<=m.reorderPoint).length;
+  const avgTurnover = (materials.reduce((s,m)=>s+parseFloat(m.turnoverRate),0)/materials.length).toFixed(1);
+  const alerts = materials.filter(m=>m.status==="critical"||m.status==="low");
+
+  const statsCards = [
+    {label:"Total Inventory Value",value:fmt$(totalValue),sub:`${materials.length} SKUs tracked`,color:"#3B82F6"},
+    {label:"Critical Items",value:critical,sub:"Below safety stock",color:"#EF4444"},
+    {label:"Low Stock Items",value:low,sub:"Below reorder point",color:"#F59E0B"},
+    {label:"Needs Reorder",value:needsReorder,sub:"Purchase orders needed",color:"#F59E0B"},
+    {label:"Avg Turnover Rate",value:`${avgTurnover}x`,sub:"Annualized",color:"#10B981"},
+  ];
+
+  return `
+  <div class="flex flex-col gap-20">
+    <div class="grid-stats">${statsCards.map((s,i)=>`
+      <div class="stat-card animate-in d${i}"><div class="bar" style="background:${s.color}"></div>
+        <div class="stat-label">${s.label}</div>
+        <div class="stat-value" style="color:${s.color}">${s.value}</div>
+        <div class="stat-sub">${s.sub}</div>
+      </div>`).join("")}
+    </div>
+    <div class="grid-2">
+      <div class="card animate-in d2">
+        <div class="card-header"><span>&#9888; Critical &amp; Low Stock Alerts</span></div>
+        <div style="max-height:320px;overflow:auto">${alerts.length ? alerts.map(m=>`
+          <div class="list-row" onclick="selectedMaterial=materials.find(x=>x.id==='${m.id}');switchTab('inventory')">
+            <div><div class="fw-500" style="font-size:13px">${esc(m.name)}</div><div class="mono text-dim" style="margin-top:2px;font-size:11px">${m.id} &middot; ${m.plant}</div></div>
+            <div style="text-align:right">${statusBadge(m.status)}<div class="mono text-muted" style="margin-top:4px">${m.currentStock} / ${m.safetyStock} safety</div></div>
+          </div>`).join("") : `<div style="padding:30px;text-align:center" class="text-dim">All stock levels are healthy</div>`}
+        </div>
+      </div>
+      <div class="card animate-in d3">
+        <div class="card-header"><span>&#128230; Incoming Purchase Orders</span></div>
+        <div style="max-height:320px;overflow:auto">${purchaseOrders.map(po=>{const mat=materials.find(m=>m.id===po.material);return`
+          <div class="list-row" style="cursor:default">
+            <div><div class="fw-500" style="font-size:13px">${mat?esc(mat.name):po.material}</div><div class="mono text-dim" style="margin-top:2px;font-size:11px">PO ${po.poNumber} &middot; ${esc(po.supplier)}</div></div>
+            <div style="text-align:right"><span class="badge badge-accent">${po.status}</span><div class="mono text-muted" style="margin-top:4px">${po.quantity} units &middot; ${fmtDate(po.deliveryDate)}</div></div>
+          </div>`;}).join("")}
+        </div>
+      </div>
+    </div>
+    <div class="card animate-in d4">
+      <div class="card-header"><span>&#8594; Recent Material Movements</span><span class="mono text-dim">Last 14 days</span></div>
+      <div style="overflow:auto"><table><thead><tr><th>Doc #</th><th>Type</th><th>Material</th><th>Qty</th><th>Mvt Type</th><th>Date</th><th>User</th></tr></thead><tbody>${movements.slice(0,10).map(mv=>{const c=mvtColor(mv.type);const mat=materials.find(m=>m.id===mv.material);return`
+        <tr class="hoverable"><td class="mono">${mv.id}</td><td><span class="badge" style="background:${c}18;color:${c}">${mv.typeLabel}</span></td><td class="mono">${mv.material}</td><td class="mono fw-600" style="color:${mv.type==='GI'?'#EF4444':'#10B981'}">${mv.type==='GI'?'−':'+'}${mv.quantity}</td><td class="mono">${mv.movementType}</td><td class="text-muted">${fmtDT(mv.date)}</td><td class="mono text-muted">${mv.user}</td></tr>`;}).join("")}
+      </tbody></table></div>
+    </div>
+  </div>`;
+}
+
+// ── Inventory ─────────────────────────────────────────────────────────
+function renderInventory() {
+  const cats = ["All",...new Set(materials.map(m=>m.category))];
+  const plants = ["All",...new Set(materials.map(m=>m.plant))];
+  const list = getFiltered();
+  const sortArrow = (f) => sortField===f ? (sortDir==="asc"?"&#9650;":"&#9660;") : "";
+
+  let detail = "";
+  if(selectedMaterial) {
+    const m = selectedMaterial;
+    detail = `<div class="card animate-in" style="margin-top:16px">
+      <div class="card-header"><span>Material Detail: ${esc(m.name)}</span><button class="btn" onclick="selectedMaterial=null;renderContent()">Close</button></div>
+      <div style="padding:20px" class="grid-3">
+        <div><div class="detail-section-label">SAP Master Data</div>${[["Material ID",m.id],["Material Group",m.sapMaterialGroup],["MRP Type",m.mrpType],["UoM",m.uom],["Unit Cost",fmt$(m.unitCost)],["Supplier",m.supplier]].map(([k,v])=>`<div class="detail-row"><span class="label">${k}</span><span class="value">${esc(String(v))}</span></div>`).join("")}</div>
+        <div><div class="detail-section-label">Stock Parameters</div>${[["Safety Stock",m.safetyStock],["Reorder Point",m.reorderPoint],["Max Stock",m.maxStock],["Lead Time",m.leadTimeDays+" days"],["Avg Daily Usage",m.avgDailyUsage+" "+m.uom+"/day"],["Turnover Rate",m.turnoverRate+"x"]].map(([k,v])=>`<div class="detail-row"><span class="label">${k}</span><span class="value">${v}</span></div>`).join("")}</div>
+        <div><div class="detail-section-label">Current Stock Breakdown</div>${[["On Hand",m.currentStock,"#E8EAF0"],["Available",m.available,"#10B981"],["Reserved",m.reserved,"#F59E0B"],["Quality Hold",m.qualityHold,"#8B5CF6"],["In Transit",m.inTransit,"#3B82F6"]].map(([k,v,c])=>`<div class="detail-row"><span class="label">${k}</span><span class="value fw-600" style="color:${c}">${v} ${m.uom}</span></div>`).join("")}
+          <div style="margin-top:12px"><div style="font-size:11px;margin-bottom:6px" class="text-dim">Stock Level vs Thresholds</div>${stockBar(m.currentStock,m.safetyStock,m.reorderPoint,m.maxStock)}
+          <div class="flex justify-between" style="margin-top:4px"><span style="font-size:10px" class="text-danger">Safety: ${m.safetyStock}</span><span style="font-size:10px" class="text-warning">Reorder: ${m.reorderPoint}</span><span style="font-size:10px" class="text-dim">Max: ${m.maxStock}</span></div></div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  return `<div class="flex flex-col gap-16">
+    <div class="flex gap-10 items-center" style="flex-wrap:wrap">
+      <div class="search-wrap"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" placeholder="Search materials, IDs, suppliers..." value="${esc(searchTerm)}" oninput="searchTerm=this.value;renderContent()"/></div>
+      <select onchange="filterCategory=this.value;renderContent()">${cats.map(c=>`<option value="${c}"${filterCategory===c?" selected":""}>${c==="All"?"All Categories":c}</option>`).join("")}</select>
+      <select onchange="filterStatus=this.value;renderContent()"><option value="All"${filterStatus==="All"?" selected":""}>All Statuses</option><option value="critical"${filterStatus==="critical"?" selected":""}>Critical</option><option value="low"${filterStatus==="low"?" selected":""}>Low Stock</option><option value="optimal"${filterStatus==="optimal"?" selected":""}>Optimal</option><option value="overstock"${filterStatus==="overstock"?" selected":""}>Overstock</option></select>
+      <select onchange="filterPlant=this.value;renderContent()">${plants.map(p=>`<option value="${p}"${filterPlant===p?" selected":""}>${p==="All"?"All Plants":p}</option>`).join("")}</select>
+      <span class="mono text-dim" style="font-size:11px">${list.length} items</span>
+    </div>
+    <div class="card" style="overflow:auto"><table><thead><tr>
+      <th onclick="toggleSort('status')">Status ${sortArrow('status')}</th><th>Material ID</th><th onclick="toggleSort('name')">Material Name ${sortArrow('name')}</th><th>Plant / SLoc</th><th onclick="toggleSort('stock')">On Hand ${sortArrow('stock')}</th><th>Available</th><th>Reserved</th><th>In Transit</th><th>Stock Level</th><th onclick="toggleSort('daysOfSupply')">DOS ${sortArrow('daysOfSupply')}</th><th onclick="toggleSort('value')">Value ${sortArrow('value')}</th><th>MRP</th>
+    </tr></thead><tbody>${list.map(m=>`
+      <tr class="hoverable" style="cursor:pointer" onclick="selectedMaterial=materials.find(x=>x.id==='${m.id}');renderContent()">
+        <td>${statusBadge(m.status)}</td><td class="mono text-accent">${m.id}</td><td class="fw-500">${esc(m.name)}</td><td class="mono text-muted">${m.plant} / ${m.sloc}</td><td class="mono fw-600">${m.currentStock} ${m.uom}</td><td class="mono text-success">${m.available}</td><td class="mono text-warning">${m.reserved}</td><td class="mono" style="color:${m.inTransit>0?'#3B82F6':'#565E73'}">${m.inTransit||"—"}</td><td style="min-width:100px">${stockBar(m.currentStock,m.safetyStock,m.reorderPoint,m.maxStock)}</td><td class="mono" style="color:${m.daysOfSupply<7?'#EF4444':m.daysOfSupply<14?'#F59E0B':'#8B92A5'}">${m.daysOfSupply}d</td><td class="mono">${fmt$(m.totalValue)}</td><td class="mono text-dim">${m.mrpType}</td>
+      </tr>`).join("")}</tbody></table></div>
+    ${detail}
+  </div>`;
+}
+
+function toggleSort(field) {
+  if(sortField===field) sortDir = sortDir==="asc"?"desc":"asc";
+  else { sortField=field; sortDir="asc"; }
+  renderContent();
+}
+
+// ── Planning ──────────────────────────────────────────────────────────
+function renderPlanning() {
+  const reorderItems = materials.filter(m=>m.currentStock<=m.reorderPoint);
+
+  const tabs = `<div class="flex gap-8">${["reorder","forecast","abc"].map(v=>`<button class="btn ${planningView===v?"btn-primary":""}" onclick="planningView='${v}';renderContent()">${v==="reorder"?"Reorder Planning":v==="forecast"?"Demand Forecast":"ABC Analysis"}</button>`).join("")}</div>`;
+
+  let body = "";
+
+  if(planningView==="reorder") {
+    body = `<div class="card animate-in"><div class="card-header"><span>Materials Requiring Reorder (${reorderItems.length})</span><button class="btn btn-sap">&#9881; Generate SAP Purchase Requisitions</button></div>
+    ${reorderItems.length ? `<div style="overflow:auto"><table><thead><tr><th>Material</th><th>Current Stock</th><th>Safety / Reorder</th><th>Days of Supply</th><th>Suggested Order Qty</th><th>Est. Cost</th><th>Lead Time</th><th>Supplier</th><th>Priority</th></tr></thead><tbody>${reorderItems.map(m=>{
+      const sq=Math.ceil((Math.max(m.reorderPoint*2,m.maxStock*0.6)-m.currentStock)/10)*10;
+      return `<tr class="hoverable"><td><div class="fw-500">${esc(m.name)}</div><div class="mono text-dim" style="font-size:11px">${m.id}</div></td><td class="mono">${m.currentStock} ${m.uom}</td><td class="mono">${m.safetyStock} / ${m.reorderPoint}</td><td class="mono" style="color:${m.daysOfSupply<7?'#EF4444':'#F59E0B'}">${m.daysOfSupply}d</td><td class="mono fw-700 text-accent">${sq} ${m.uom}</td><td class="mono">${fmt$(sq*m.unitCost)}</td><td class="mono">${m.leadTimeDays}d</td><td style="font-size:12px">${esc(m.supplier)}</td><td>${statusBadge(m.status)}</td></tr>`;
+    }).join("")}</tbody></table></div>` : `<div style="padding:40px;text-align:center" class="text-dim">All materials are above reorder point</div>`}
+    </div>`;
+  }
+
+  if(planningView==="forecast") {
+    body = `<div class="card animate-in"><div class="card-header"><span>30-Day Demand Forecast</span></div><div style="padding:20px">${materials.slice(0,8).map(m=>{
+      const fc=m.avgDailyUsage*30;const pct=Math.min(100,(fc/m.maxStock)*100);const dep=m.currentStock<fc;
+      return `<div class="forecast-row">
+        <div style="width:200px;flex-shrink:0"><div class="fw-500" style="font-size:13px">${esc(m.name)}</div><div class="mono text-dim" style="font-size:11px">${m.id}</div></div>
+        <div style="flex:1"><div class="flex justify-between" style="margin-bottom:4px"><span style="font-size:11px" class="text-muted">Projected 30d usage: ${fc} ${m.uom}</span><span class="mono" style="font-size:11px;color:${dep?'#EF4444':'#10B981'}">${dep?`Depletes in ~${m.daysOfSupply}d`:`${Math.floor(m.currentStock/m.avgDailyUsage)}d supply`}</span></div><div class="forecast-bar-wrap"><div class="forecast-bar-fill bar-grow" style="width:${pct}%;background:${dep?'#EF4444':'#10B981'}"></div></div></div>
+        <div style="width:80px;text-align:right" class="mono" style="font-size:12px">${m.currentStock} on hand</div>
+      </div>`;
+    }).join("")}</div></div>`;
+  }
+
+  if(planningView==="abc") {
+    const sorted=[...materials].sort((a,b)=>b.totalValue-a.totalValue);
+    const totalVal=sorted.reduce((s,m)=>s+m.totalValue,0);
+    let cum=0;
+    const classified=sorted.map(m=>{cum+=m.totalValue;const cp=(cum/totalVal)*100;const cls=cp<=80?"A":cp<=95?"B":"C";return{...m,cls,cumPct:cp,valuePct:((m.totalValue/totalVal)*100).toFixed(1)};});
+    const cc={A:"#EF4444",B:"#F59E0B",C:"#10B981"};
+
+    body = `<div class="card animate-in"><div class="card-header"><span>ABC Classification (by Inventory Value)</span></div><div style="padding:20px">
+      <div class="flex gap-20" style="margin-bottom:20px">${["A","B","C"].map(c=>{const items=classified.filter(m=>m.cls===c);const val=items.reduce((s,m)=>s+m.totalValue,0);return`<div class="abc-card abc-${c}"><div class="abc-title" style="color:${cc[c]}">Class ${c}</div><div style="font-size:12px;margin-top:4px" class="text-muted">${items.length} items &middot; ${fmt$(val)}</div><div style="font-size:11px;margin-top:2px" class="text-dim">${((val/totalVal)*100).toFixed(0)}% of total value</div></div>`;}).join("")}</div>
+      <table><thead><tr><th>Class</th><th>Material</th><th>Value</th><th>% of Total</th><th>Cumulative %</th><th>Turnover</th></tr></thead><tbody>${classified.map(m=>`
+        <tr class="hoverable"><td><span class="badge" style="background:${cc[m.cls]}18;color:${cc[m.cls]};font-weight:700;font-size:12px">${m.cls}</span></td><td><span class="fw-500">${esc(m.name)}</span> <span class="mono text-dim" style="font-size:11px">${m.id}</span></td><td class="mono">${fmt$(m.totalValue)}</td><td class="mono">${m.valuePct}%</td><td class="mono">${m.cumPct.toFixed(1)}%</td><td class="mono">${m.turnoverRate}x</td></tr>`).join("")}
+      </tbody></table>
+    </div></div>`;
+  }
+
+  return `<div class="flex flex-col gap-16">${tabs}${body}</div>`;
+}
+
+// ── Movements ─────────────────────────────────────────────────────────
+function renderMovements() {
+  return `<div class="card animate-in">
+    <div class="card-header"><span>Material Document Log</span><button class="btn btn-sap">&#9881; Pull from SAP MM</button></div>
+    <div style="overflow:auto"><table><thead><tr><th>Document #</th><th>Movement Type</th><th>SAP Mvt</th><th>Material</th><th>Quantity</th><th>Posting Date</th><th>User</th></tr></thead><tbody>${movements.map(mv=>{const c=mvtColor(mv.type);const mat=materials.find(m=>m.id===mv.material);return`
+      <tr class="hoverable"><td class="mono">${mv.id}</td><td><span class="badge" style="background:${c}18;color:${c}">${mv.typeLabel}</span></td><td class="mono">${mv.movementType}</td><td><div class="fw-500" style="font-size:12px">${mat?esc(mat.name):mv.material}</div><div class="mono text-dim" style="font-size:11px">${mv.material}</div></td><td class="mono fw-600" style="color:${mv.type==='GI'?'#EF4444':'#10B981'}">${mv.type==='GI'?'−':'+'}${mv.quantity}</td><td class="mono text-muted">${fmtDT(mv.date)}</td><td class="mono text-muted">${mv.user}</td></tr>`;}).join("")}
+    </tbody></table></div>
+  </div>`;
+}
+
+// ── SAP Config ────────────────────────────────────────────────────────
+function renderSAP() {
+  const syncTime = lastSync ? fmtDT(lastSync) : "Never";
+  return `<div class="flex flex-col gap-16">
+    <div class="card animate-in"><div class="card-header"><span>&#9881; SAP System Connection</span></div><div style="padding:20px">
+      <div class="grid-2 gap-20">
+        <div class="config-field"><label>SAP Host URL</label><input type="text" value="https://your-sap-instance.com"/></div>
+        <div class="config-field"><label>Client</label><input type="text" value="100"/></div>
+        <div class="config-field"><label>Username</label><input type="text" value="SAP_API_USER"/></div>
+        <div class="config-field"><label>API Key / Password</label><input type="password" value="password123"/></div>
+      </div>
+      <div style="margin-top:20px" class="flex gap-10">
+        <button class="btn btn-primary" onclick="alert('In production, this authenticates against your SAP OData service endpoint.')">&#10003; Test Connection</button>
+        <button class="btn">Save Configuration</button>
+      </div>
+    </div></div>
+    <div class="card animate-in d1"><div class="card-header"><span>OData Service Endpoints</span></div><div style="padding:20px">${Object.entries(SAP_CONFIG.services).map(([k,v])=>`
+      <div class="endpoint-row"><div><div class="fw-500" style="font-size:13px">${k.replace(/([A-Z])/g," $1").trim()}</div><div class="mono text-accent" style="font-size:11px">${v}</div></div><span class="badge badge-optimal"><span class="dot"></span> Connected</span></div>`).join("")}
+    </div></div>
+    <div class="card animate-in d2"><div class="card-header"><span>Sync Schedule</span></div><div style="padding:20px"><div class="grid-3 gap-16">${[
+      ["Material Master (MM01)","Every 4 hours"],["Stock Overview (MMBE)","Every 15 minutes"],["Purchase Orders (ME2M)","Every 30 minutes"],["Material Movements (MB51)","Every 10 minutes"],["MRP Results (MD04)","Every 1 hour"],["Plant Maintenance (IW39)","Every 2 hours"]
+    ].map(([label,freq])=>`<div class="sync-card"><div class="fw-500" style="font-size:13px">${label}</div><div class="mono text-muted" style="font-size:11px;margin-top:6px">Frequency: ${freq}</div><div class="mono text-dim" style="font-size:11px;margin-top:2px">Last sync: ${syncTime}</div></div>`).join("")}</div></div></div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════════
+syncFromSAP();
+</script>
+</body>
+</html>

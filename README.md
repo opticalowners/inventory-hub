@@ -5,6 +5,8 @@ SAP-integrated inventory management dashboard for tracking stock levels, plannin
 ![SAP](https://img.shields.io/badge/SAP-OData%20Integration-0070F2?logo=sap&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
+**[Live Demo](https://opticalowners.github.io/inventory-hub/)**
+
 ## Overview
 
 Inventory Hub is a self-contained single-file HTML application designed to connect with SAP ERP systems via OData APIs. It provides real-time visibility into inventory levels, automated reorder planning, demand forecasting, and ABC analysis — all within a unified dashboard.
@@ -38,7 +40,7 @@ No build step or dependencies required. Just open the file:
 2. Open `inventory-hub.html` in any modern browser
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/inventory-hub.git
+git clone https://github.com/opticalowners/inventory-hub.git
 cd inventory-hub
 open inventory-hub.html
 ```
